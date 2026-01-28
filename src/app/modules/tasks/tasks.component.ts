@@ -1,10 +1,9 @@
 import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-tasks',
-  imports: [],
-  templateUrl: './tasks.component.html',
+  imports: [RouterOutlet],
+  template: `<router-outlet />`,
 })
-export class TasksComponent {
-
-}
+export class TasksComponent {}
