@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { tapResponse } from '@ngrx/operators';
 import {
   patchState,
   signalStore,
@@ -10,7 +11,7 @@ import {
   withState,
 } from '@ngrx/signals';
 import { ToastrService } from 'ngx-toastr';
-import { tap } from 'rxjs';
+import { clearCache } from '../../../shared/interceptors/cache.interceptor';
 import { ApiResponse } from '../../../shared/models/api.model';
 import { GlobalStore } from '../../../shared/store/global.store';
 import { AuthUserResponse, LoginUserRequest, RegisterUserRequest } from '../models/common.model';
@@ -38,7 +39,7 @@ export const AuthStore = signalStore(
   })),
   withComputed((store) => ({
     isLoggedIn: computed(() => !!store.currentUser()),
-    token: computed(() => localStorage.getItem(TOKEN_KEY)),
+    token: computed(() => localStorage.getItem(TOKEN_KEY) || undefined),
   })),
   withMethods((store) => {
     const setCurrentUser = (user: User | undefined) => {
@@ -56,13 +57,10 @@ export const AuthStore = signalStore(
     const login = store.globalStore.withFormSubmission<LoginUserRequest, AuthUserResponse>(
       (payload) =>
         store.authService.login(payload).pipe(
-          tap({
+          tapResponse({
             next: (response) => {
               setToken(response.token);
               fetchCurrentUser();
-              store.router.navigateByUrl('/dashboard').then(() => {
-                store.toastrService.success('Login successful!', 'Success');
-              });
             },
             error: (error: HttpErrorResponse) => {
               console.error('Login error:', error);
@@ -74,13 +72,10 @@ export const AuthStore = signalStore(
     const register = store.globalStore.withFormSubmission<RegisterUserRequest, AuthUserResponse>(
       (payload) =>
         store.authService.register(payload).pipe(
-          tap({
+          tapResponse({
             next: (response) => {
               setToken(response.token);
               fetchCurrentUser();
-              store.router.navigateByUrl('/dashboard').then(() => {
-                store.toastrService.success('Registration successful!', 'Success');
-              });
             },
             error: (error: HttpErrorResponse) => {
               console.error('Registration error:', error);
@@ -91,11 +86,12 @@ export const AuthStore = signalStore(
 
     const logout = store.globalStore.withApiState<void, ApiResponse>(() =>
       store.authService.logout().pipe(
-        tap({
+        tapResponse({
           next: (_) => {
             patchState(store, { currentUser: undefined });
             localStorage.removeItem(TOKEN_KEY);
-            store.router.navigateByUrl('/login').then(() => {
+            clearCache(); // Clear all cached API responses
+            store.router.navigateByUrl('/auth/login').then(() => {
               store.toastrService.success('Logged out successfully.', 'Success');
             });
           },
@@ -108,7 +104,7 @@ export const AuthStore = signalStore(
 
     const fetchCurrentUser = store.globalStore.withApiState<void, User>(() =>
       store.authService.getCurrentUser().pipe(
-        tap({
+        tapResponse({
           next: (response) => {
             setCurrentUser(response);
           },
@@ -121,7 +117,7 @@ export const AuthStore = signalStore(
 
     const refreshToken = store.globalStore.withApiState<void, AuthUserResponse>(() =>
       store.authService.refreshToken().pipe(
-        tap({
+        tapResponse({
           next: (response) => {
             setToken(response.token);
           },

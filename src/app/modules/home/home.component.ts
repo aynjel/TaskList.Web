@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthStore } from '../auth/store/auth.store';
 
@@ -14,12 +14,7 @@ export class HomeComponent {
   readonly isLoggedIn = this.authStore.isLoggedIn;
   readonly currentUser = this.authStore.currentUser;
 
-  constructor() {
-    effect(() => {
-      const user = this.currentUser();
-      console.log('Current User:', !!user);
-      console.log('Auth Token:', this.authStore.token());
-      console.log('Is Logged In:', this.authStore.isLoggedIn());
-    });
+  logout(): void {
+    this.authStore.logout();
   }
 }

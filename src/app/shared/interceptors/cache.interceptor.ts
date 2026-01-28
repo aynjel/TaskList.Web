@@ -4,6 +4,19 @@ import { of, tap } from 'rxjs';
 const cache = new Map<string, HttpEvent<any>>();
 const cacheInvalidationPatterns: Record<string, string[]> = {};
 
+// Endpoints that should never be cached
+const CACHE_EXCLUSIONS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/logout',
+  '/auth/refresh',
+  '/auth/current-user',
+];
+
+const shouldExcludeFromCache = (url: string): boolean => {
+  return CACHE_EXCLUSIONS.some((exclusion) => url.includes(exclusion));
+};
+
 const invalidateCache = (patterns: string[]): void => {
   const keysToDelete: string[] = [];
 
@@ -17,20 +30,24 @@ const invalidateCache = (patterns: string[]): void => {
 };
 
 const getCacheInvalidationPatterns = (url: string): string[] => {
-  // Clear all cache on logout
-  if (url.includes('/auth/logout')) {
-    cache.clear();
-    console.log('[Cache] Cleared all cache on logout');
-    return [];
-  }
-
   if (url.includes('/example-endpoint')) {
     return cacheInvalidationPatterns['example-key'] || [];
   }
   return [];
 };
 
+// Export function to manually clear cache (for logout, session expiry, etc.)
+export const clearCache = (): void => {
+  cache.clear();
+  console.log('[Cache] Manually cleared all cache');
+};
+
 export const cacheInterceptor: HttpInterceptorFn = (req, next) => {
+  // Skip caching for excluded endpoints
+  if (shouldExcludeFromCache(req.url)) {
+    return next(req);
+  }
+
   if (req.method === 'GET') {
     const cachedResponse = cache.get(req.urlWithParams);
     if (cachedResponse) {
