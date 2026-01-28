@@ -19,12 +19,12 @@ import { AuthService } from '../services/auth.service';
 
 type AuthStateType = {
   currentUser: User | undefined;
-  token: string | undefined;
 };
+
+const TOKEN_KEY = 'auth_token';
 
 const INITIAL_STATE: AuthStateType = {
   currentUser: undefined,
-  token: undefined,
 };
 
 export const AuthStore = signalStore(
@@ -37,106 +37,107 @@ export const AuthStore = signalStore(
     router: inject(Router),
   })),
   withComputed((store) => ({
-    isLoggedIn: computed(() => !!store.currentUser),
-    hasAdminAccess: computed(() => false), // temporary placeholder
+    isLoggedIn: computed(() => !!store.currentUser()),
+    token: computed(() => localStorage.getItem(TOKEN_KEY)),
   })),
-  withMethods((store) => ({
-    setCurrentUser(user: User | undefined) {
+  withMethods((store) => {
+    const setCurrentUser = (user: User | undefined) => {
       patchState(store, { currentUser: user });
-    },
+    };
 
-    login() {
-      return store.globalStore.withFormSubmission<LoginUserRequest, AuthUserResponse>((payload) =>
+    const setToken = (token: string | undefined) => {
+      if (token) {
+        localStorage.setItem(TOKEN_KEY, token);
+      } else {
+        localStorage.removeItem(TOKEN_KEY);
+      }
+    };
+
+    const login = store.globalStore.withFormSubmission<LoginUserRequest, AuthUserResponse>(
+      (payload) =>
         store.authService.login(payload).pipe(
           tap({
             next: (response) => {
-              this.fetchCurrentUser();
+              setToken(response.token);
+              fetchCurrentUser();
               store.router.navigateByUrl('/dashboard').then(() => {
                 store.toastrService.success('Login successful!', 'Success');
               });
             },
             error: (error: HttpErrorResponse) => {
-              store.toastrService.error('Login failed. Please try again.', 'Error');
               console.error('Login error:', error);
             },
           }),
         ),
-      );
-    },
+    );
 
-    register() {
-      return store.globalStore.withFormSubmission<RegisterUserRequest, AuthUserResponse>(
-        (payload) =>
-          store.authService.register(payload).pipe(
-            tap({
-              next: (response) => {
-                this.fetchCurrentUser();
-                store.router.navigateByUrl('/dashboard').then(() => {
-                  store.toastrService.success('Registration successful!', 'Success');
-                });
-              },
-              error: (error: HttpErrorResponse) => {
-                store.toastrService.error('Registration failed. Please try again.', 'Error');
-                console.error('Registration error:', error);
-              },
-            }),
-          ),
-      );
-    },
-
-    logout() {
-      return store.globalStore.withApiState<void, ApiResponse>(() =>
-        store.authService.logout().pipe(
+    const register = store.globalStore.withFormSubmission<RegisterUserRequest, AuthUserResponse>(
+      (payload) =>
+        store.authService.register(payload).pipe(
           tap({
-            next: (_) => {
-              patchState(store, { currentUser: undefined });
-              store.router.navigateByUrl('/login').then(() => {
-                store.toastrService.success('Logged out successfully.', 'Success');
+            next: (response) => {
+              setToken(response.token);
+              fetchCurrentUser();
+              store.router.navigateByUrl('/dashboard').then(() => {
+                store.toastrService.success('Registration successful!', 'Success');
               });
             },
             error: (error: HttpErrorResponse) => {
-              store.toastrService.error('Logout failed. Please try again.', 'Error');
-              console.error('Logout error:', error);
+              console.error('Registration error:', error);
             },
           }),
         ),
-      );
-    },
+    );
 
-    fetchCurrentUser() {
-      return store.globalStore.withApiState<void, User>(() =>
-        store.authService.getCurrentUser().pipe(
-          tap({
-            next: (response) => {
-              patchState(store, {
-                currentUser: {
-                  id: response.id,
-                  email: response.email,
-                  name: response.name,
-                },
-              });
-            },
-            error: (error: HttpErrorResponse) => {
-              console.error('Fetch current user error:', error);
-            },
-          }),
-        ),
-      );
-    },
+    const logout = store.globalStore.withApiState<void, ApiResponse>(() =>
+      store.authService.logout().pipe(
+        tap({
+          next: (_) => {
+            patchState(store, { currentUser: undefined });
+            localStorage.removeItem(TOKEN_KEY);
+            store.router.navigateByUrl('/login').then(() => {
+              store.toastrService.success('Logged out successfully.', 'Success');
+            });
+          },
+          error: (error: HttpErrorResponse) => {
+            console.error('Logout error:', error);
+          },
+        }),
+      ),
+    );
 
-    refreshToken() {
-      return store.globalStore.withApiState<void, User>(() =>
-        store.authService.refreshToken().pipe(
-          tap({
-            next: (response) => {
-              patchState(store, { currentUser: response });
-            },
-            error: (error: HttpErrorResponse) => {
-              console.error('Refresh token error:', error);
-            },
-          }),
-        ),
-      );
-    },
-  })),
+    const fetchCurrentUser = store.globalStore.withApiState<void, User>(() =>
+      store.authService.getCurrentUser().pipe(
+        tap({
+          next: (response) => {
+            setCurrentUser(response);
+          },
+          error: (error: HttpErrorResponse) => {
+            console.error('Fetch current user error:', error);
+          },
+        }),
+      ),
+    );
+
+    const refreshToken = store.globalStore.withApiState<void, AuthUserResponse>(() =>
+      store.authService.refreshToken().pipe(
+        tap({
+          next: (response) => {
+            setToken(response.token);
+          },
+          error: (error: HttpErrorResponse) => {
+            console.error('Refresh token error:', error);
+          },
+        }),
+      ),
+    );
+
+    return {
+      login,
+      register,
+      logout,
+      fetchCurrentUser,
+      refreshToken,
+    };
+  }),
 );

@@ -20,7 +20,7 @@ const INITIALIZE_APP = (): Promise<void> => {
   const document = inject(DOCUMENT);
   const renderer = inject(RendererFactory2).createRenderer(null, null);
 
-  if (authStore.isLoggedIn()) {
+  if (authStore.token()) {
     authStore.fetchCurrentUser();
   }
 

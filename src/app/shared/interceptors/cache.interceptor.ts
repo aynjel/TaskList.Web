@@ -17,6 +17,13 @@ const invalidateCache = (patterns: string[]): void => {
 };
 
 const getCacheInvalidationPatterns = (url: string): string[] => {
+  // Clear all cache on logout
+  if (url.includes('/auth/logout')) {
+    cache.clear();
+    console.log('[Cache] Cleared all cache on logout');
+    return [];
+  }
+
   if (url.includes('/example-endpoint')) {
     return cacheInvalidationPatterns['example-key'] || [];
   }
@@ -41,11 +48,18 @@ export const cacheInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   return next(req).pipe(
-    tap((event) => {
-      if (req.method === 'GET' && event instanceof HttpResponse) {
-        console.log('[Cache] Caching GET response for:', req.urlWithParams);
-        cache.set(req.urlWithParams, event);
-      }
+    tap({
+      next: (event) => {
+        // Only cache successful GET responses
+        if (req.method === 'GET' && event instanceof HttpResponse && event.ok) {
+          console.log('[Cache] Caching GET response for:', req.urlWithParams);
+          cache.set(req.urlWithParams, event);
+        }
+      },
+      error: () => {
+        // Don't cache errors - ensure this request won't be cached
+        cache.delete(req.urlWithParams);
+      },
     }),
   );
 };

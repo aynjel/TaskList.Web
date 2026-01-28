@@ -27,8 +27,8 @@ export class AuthService {
     return this.httpClient.post<ApiResponse>(`${this.apiUrl}/logout`, {});
   }
 
-  refreshToken(): Observable<User> {
-    return this.httpClient.post<User>(`${this.apiUrl}/refresh`, {});
+  refreshToken(): Observable<AuthUserResponse> {
+    return this.httpClient.post<AuthUserResponse>(`${this.apiUrl}/refresh`, {});
   }
 
   getCurrentUser(): Observable<User> {

@@ -1,6 +1,6 @@
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { debounceTime, finalize, Observable, pipe, switchMap, tap } from 'rxjs';
+import { catchError, debounceTime, finalize, Observable, of, pipe, switchMap, tap } from 'rxjs';
 
 export type WithCallbacks<T, S> = {
   data: T;
@@ -37,6 +37,11 @@ export const GlobalStore = signalStore(
                   cb.onError?.(error);
                 },
               }),
+              catchError((error) => {
+                // Catch errors to prevent the observable chain from completing
+                console.error('Form submission error caught:', error);
+                return of(null);
+              }),
               finalize(() => {
                 patchState(store, { isSubmitting: false });
               }),
@@ -50,7 +55,14 @@ export const GlobalStore = signalStore(
         pipe(
           tap(() => patchState(store, { isLoading: true })),
           switchMap((data) =>
-            source$(data).pipe(finalize(() => patchState(store, { isLoading: false }))),
+            source$(data).pipe(
+              catchError((error) => {
+                // Catch errors to prevent the observable chain from completing
+                console.error('API call error caught:', error);
+                return of(null);
+              }),
+              finalize(() => patchState(store, { isLoading: false })),
+            ),
           ),
         ),
       );
