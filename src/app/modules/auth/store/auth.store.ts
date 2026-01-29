@@ -1,16 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { tapResponse } from '@ngrx/operators';
 import {
   patchState,
   signalStore,
   withComputed,
+  withHooks,
   withMethods,
   withProps,
   withState,
 } from '@ngrx/signals';
 import { ToastrService } from 'ngx-toastr';
+import { catchError, first, of, tap } from 'rxjs';
 import { clearCache } from '../../../shared/interceptors/cache.interceptor';
 import { ApiResponse } from '../../../shared/models/api.model';
 import { GlobalStore } from '../../../shared/store/global.store';
@@ -18,14 +19,18 @@ import { AuthUserResponse, LoginUserRequest, RegisterUserRequest } from '../mode
 import { User } from '../models/user.model';
 import { AuthService } from '../services/auth.service';
 
+const SESSION_FLAG = 'has_session';
+
 type AuthStateType = {
   currentUser: User | undefined;
+  token: string | undefined; // Stored in-memory only (short-lived access token)
+  refreshIntervalId: ReturnType<typeof setInterval> | undefined;
 };
-
-const TOKEN_KEY = 'auth_token';
 
 const INITIAL_STATE: AuthStateType = {
   currentUser: undefined,
+  token: undefined,
+  refreshIntervalId: undefined,
 };
 
 export const AuthStore = signalStore(
@@ -39,7 +44,6 @@ export const AuthStore = signalStore(
   })),
   withComputed((store) => ({
     isLoggedIn: computed(() => !!store.currentUser()),
-    token: computed(() => localStorage.getItem(TOKEN_KEY) || undefined),
   })),
   withMethods((store) => {
     const setCurrentUser = (user: User | undefined) => {
@@ -47,20 +51,29 @@ export const AuthStore = signalStore(
     };
 
     const setToken = (token: string | undefined) => {
-      if (token) {
-        localStorage.setItem(TOKEN_KEY, token);
+      patchState(store, { token });
+    };
+
+    const setSessionFlag = (hasSession: boolean) => {
+      if (hasSession) {
+        localStorage.setItem(SESSION_FLAG, 'true');
       } else {
-        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(SESSION_FLAG);
       }
     };
 
     const login = store.globalStore.withFormSubmission<LoginUserRequest, AuthUserResponse>(
       (payload) =>
         store.authService.login(payload).pipe(
-          tapResponse({
+          tap({
             next: (response) => {
               setToken(response.token);
+              // Set session flag to indicate refresh token cookie exists
+              setSessionFlag(true);
+              // Fetch current user after successful login
               fetchCurrentUser();
+              // Start background refresh after successful login
+              startBackgroundRefresh();
             },
             error: (error: HttpErrorResponse) => {
               console.error('Login error:', error);
@@ -72,10 +85,13 @@ export const AuthStore = signalStore(
     const register = store.globalStore.withFormSubmission<RegisterUserRequest, AuthUserResponse>(
       (payload) =>
         store.authService.register(payload).pipe(
-          tapResponse({
+          tap({
             next: (response) => {
               setToken(response.token);
+              setSessionFlag(true);
               fetchCurrentUser();
+              // Start background refresh after successful registration
+              startBackgroundRefresh();
             },
             error: (error: HttpErrorResponse) => {
               console.error('Registration error:', error);
@@ -86,10 +102,12 @@ export const AuthStore = signalStore(
 
     const logout = store.globalStore.withApiState<void, ApiResponse>(() =>
       store.authService.logout().pipe(
-        tapResponse({
+        tap({
           next: (_) => {
-            patchState(store, { currentUser: undefined });
-            localStorage.removeItem(TOKEN_KEY);
+            setCurrentUser(undefined);
+            setToken(undefined);
+            stopBackgroundRefresh();
+            setSessionFlag(false);
             clearCache(); // Clear all cached API responses
             store.router.navigateByUrl('/auth/login').then(() => {
               store.toastrService.success('Logged out successfully.', 'Success');
@@ -104,12 +122,16 @@ export const AuthStore = signalStore(
 
     const fetchCurrentUser = store.globalStore.withApiState<void, User>(() =>
       store.authService.getCurrentUser().pipe(
-        tapResponse({
+        tap({
           next: (response) => {
             setCurrentUser(response);
           },
-          error: (error: HttpErrorResponse) => {
-            console.error('Fetch current user error:', error);
+          error: (_: HttpErrorResponse) => {
+            // force logout on failure to get current user
+            setCurrentUser(undefined);
+            setToken(undefined);
+            stopBackgroundRefresh();
+            setSessionFlag(false);
           },
         }),
       ),
@@ -117,23 +139,91 @@ export const AuthStore = signalStore(
 
     const refreshToken = store.globalStore.withApiState<void, AuthUserResponse>(() =>
       store.authService.refreshToken().pipe(
-        tapResponse({
+        tap({
           next: (response) => {
             setToken(response.token);
+            // Fetch current user after successful token refresh
+            fetchCurrentUser();
+            // Start background refresh after successful token refresh
+            startBackgroundRefresh();
           },
           error: (error: HttpErrorResponse) => {
+            // Silent refresh failed - user needs to log in
             console.error('Refresh token error:', error);
+            setCurrentUser(undefined);
+            setToken(undefined);
+            stopBackgroundRefresh();
+            setSessionFlag(false);
           },
         }),
       ),
     );
 
+    const silentRefresh = () => {
+      const hasSession = localStorage.getItem(SESSION_FLAG);
+      if (!hasSession) {
+        return; // No session flag, skip refresh attempt
+      }
+
+      // Directly subscribe without using withApiState to avoid logging errors
+      store.authService
+        .refreshToken()
+        .pipe(
+          first(),
+          tap({
+            next: (response) => {
+              setToken(response.token);
+              // Ensure session flag is set
+              setSessionFlag(true);
+              // Fetch current user after successful token refresh
+              fetchCurrentUser();
+              // Start background refresh after successful token refresh
+              startBackgroundRefresh();
+            },
+          }),
+          catchError(() => {
+            setSessionFlag(false);
+            return of(null);
+          }),
+        )
+        .subscribe();
+    };
+
+    const startBackgroundRefresh = () => {
+      // Clear any existing interval
+      stopBackgroundRefresh();
+
+      const intervalId = setInterval(
+        () => {
+          console.log('🔄 Background token refresh');
+          refreshToken();
+        },
+        14 * 60 * 1000,
+      ); // 14 minutes in milliseconds
+
+      patchState(store, { refreshIntervalId: intervalId });
+    };
+
+    const stopBackgroundRefresh = () => {
+      const intervalId = store.refreshIntervalId();
+      if (intervalId) {
+        clearInterval(intervalId);
+        patchState(store, { refreshIntervalId: undefined });
+      }
+    };
+
     return {
       login,
       register,
       logout,
-      fetchCurrentUser,
-      refreshToken,
+      silentRefresh,
+      stopBackgroundRefresh,
     };
+  }),
+  withHooks({
+    onDestroy: (store) => {
+      // Clean up background refresh interval on store destruction
+      store.stopBackgroundRefresh();
+    },
   }),
 );

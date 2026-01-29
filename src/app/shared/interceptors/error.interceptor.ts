@@ -30,7 +30,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             break;
 
           case 401:
-            toastrService.error('Unauthorized access. Please log in.', 'Error');
+            toastrService.error('Unauthorized access', 'Error');
             console.error('Unauthorized:', error);
             break;
 
@@ -46,7 +46,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             break;
 
           default:
-            toastrService.error(error.error.message || 'An unexpected error occurred.', 'Error');
+            toastrService.error(error.error.message || 'An unexpected error occurred', 'Error');
             console.error(error);
             break;
         }

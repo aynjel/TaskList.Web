@@ -16,22 +16,39 @@ export class AuthService {
   private readonly apiUrl = environment.apiUrl + ENDPOINTS.AUTH;
 
   login(payload: LoginUserRequest): Observable<AuthUserResponse> {
-    return this.httpClient.post<AuthUserResponse>(`${this.apiUrl}/login`, payload);
+    return this.httpClient.post<AuthUserResponse>(`${this.apiUrl}/login`, payload, {
+      withCredentials: true,
+    });
   }
 
   register(payload: RegisterUserRequest): Observable<AuthUserResponse> {
-    return this.httpClient.post<AuthUserResponse>(`${this.apiUrl}/register`, payload);
+    return this.httpClient.post<AuthUserResponse>(`${this.apiUrl}/register`, payload, {
+      withCredentials: true,
+    });
   }
 
   logout(): Observable<ApiResponse> {
-    return this.httpClient.post<ApiResponse>(`${this.apiUrl}/logout`, {});
+    return this.httpClient.post<ApiResponse>(
+      `${this.apiUrl}/logout`,
+      {},
+      {
+        withCredentials: true,
+      },
+    );
   }
 
   refreshToken(): Observable<AuthUserResponse> {
-    return this.httpClient.post<AuthUserResponse>(`${this.apiUrl}/refresh`, {});
+    return this.httpClient.post<AuthUserResponse>(
+      `${this.apiUrl}/refresh`,
+      {},
+      {
+        withCredentials: true,
+      },
+    );
   }
 
   getCurrentUser(): Observable<User> {
+    // No withCredentials needed - uses access token from JWT interceptor
     return this.httpClient.get<User>(`${this.apiUrl}/me`);
   }
 }

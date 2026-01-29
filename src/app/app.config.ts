@@ -15,16 +15,14 @@ import { cacheInterceptor } from './shared/interceptors/cache.interceptor';
 import { errorInterceptor } from './shared/interceptors/error.interceptor';
 import { jwtInterceptor } from './shared/interceptors/jwt.interceptor';
 
-const INITIALIZE_APP = (): Promise<void> => {
+const INITIALIZE_APP = async (): Promise<void> => {
   const authStore = inject(AuthStore);
   const document = inject(DOCUMENT);
   const renderer = inject(RendererFactory2).createRenderer(null, null);
 
-  if (authStore.token()) {
-    authStore.fetchCurrentUser();
-  }
+  authStore.silentRefresh();
 
-  return new Promise<void>((resolve) => {
+  await new Promise<void>((resolve) => {
     setTimeout(() => {
       const splash = document.getElementById('initial-splash');
 
@@ -35,7 +33,7 @@ const INITIALIZE_APP = (): Promise<void> => {
 
       console.log('🚀 Initialization Complete');
       resolve();
-    }, 500);
+    }, 800);
   });
 };
 

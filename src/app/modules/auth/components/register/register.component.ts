@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { ToastrService } from 'ngx-toastr';
+import { RouterLink } from '@angular/router';
 import { GlobalStore } from '../../../../shared/store/global.store';
 import { AuthStore } from '../../store/auth.store';
 
@@ -15,8 +14,6 @@ export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authStore = inject(AuthStore);
   private readonly globalStore = inject(GlobalStore);
-  private readonly router = inject(Router);
-  private readonly toastrService = inject(ToastrService);
 
   readonly showPassword = signal(false);
   readonly showConfirmPassword = signal(false);
@@ -60,11 +57,6 @@ export class RegisterComponent {
       const { confirmPassword, ...registerData } = this.registerForm.getRawValue();
       this.authStore.register({
         data: registerData,
-        onSuccess: () => {
-          this.router.navigateByUrl('/dashboard').then(() => {
-            this.toastrService.success('Registration successful!', 'Success');
-          });
-        },
       });
     } else {
       this.registerForm.markAllAsTouched();
