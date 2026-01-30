@@ -12,7 +12,11 @@ import { ToastrService } from 'ngx-toastr';
 import { tap } from 'rxjs';
 import { TaskItem } from '../../../shared/models/task.model';
 import { GlobalStore } from '../../../shared/store/global.store';
-import { TaskFilterParams } from '../models/common.model';
+import {
+  ExtractedTask,
+  TaskFilterParams,
+  UploadedDocumentTaskResponse,
+} from '../models/common.model';
 import { TasksService } from '../services/tasks.service';
 import {
   CreateTaskRequests,
@@ -25,6 +29,7 @@ type TaskStateType = {
   tasks: TaskItem[];
   selectedTask: TaskItem | undefined;
   filterParams: TaskFilterParams;
+  extractedTasks: ExtractedTask[];
 };
 
 const DEFAULT_FILTER_PARAMS: TaskFilterParams = {
@@ -44,6 +49,7 @@ const INITIAL_STATE: TaskStateType = {
   tasks: [],
   selectedTask: undefined,
   filterParams: DEFAULT_FILTER_PARAMS,
+  extractedTasks: [],
 };
 
 export const TasksStore = signalStore(
@@ -219,6 +225,26 @@ export const TasksStore = signalStore(
       ),
     );
 
+    const uploadDocumentForExtraction = store.globalStore.withFormSubmission<
+      File,
+      UploadedDocumentTaskResponse
+    >((file: File) =>
+      store.taskService.uploadDocumentForExtraction(file).pipe(
+        tap({
+          next: (response: UploadedDocumentTaskResponse) => {
+            patchState(store, { extractedTasks: response.extractedTasks });
+            store.toastService.success(
+              `Document processed successfully. ${response.extractedTasks.length} tasks extracted.`,
+              'Success',
+            );
+          },
+          error: (error: HttpErrorResponse) => {
+            console.error('Error uploading document for extraction:', error);
+          },
+        }),
+      ),
+    );
+
     const createTaskFromExtractions = store.globalStore.withFormSubmission<
       ExtractedTaskRequest[],
       ExtractedTaskResponse
@@ -259,6 +285,7 @@ export const TasksStore = signalStore(
       deleteTask,
       updateTask,
       updateTaskStatus,
+      uploadDocumentForExtraction,
       createTaskFromExtractions,
       resetFilterParams,
       setFilterParams,

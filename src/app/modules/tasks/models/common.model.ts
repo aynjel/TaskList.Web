@@ -63,3 +63,46 @@ export type TaskStatusKey = 1 | 2 | 3 | 4;
 //   byPriority: Record<string, number>;
 //   byCategory: Record<string, number>;
 // }
+
+export interface UploadedDocumentTaskResponse {
+  extractedTasks: ExtractedTask[];
+  extractedContacts: ExtractedContact[];
+  documentSummary: string;
+  aiInsights: string;
+  metadata: Metadata;
+  processedAt: string;
+}
+
+export interface ExtractedTask {
+  title: string;
+  description: string;
+  dueDate: any;
+  priority: number;
+  suggestedCategory: number;
+  confidence: number;
+  sourceText: string;
+}
+
+interface ExtractedContact {
+  name: string;
+  email: string;
+  role: string;
+}
+
+interface Metadata {
+  totalTasksFound: number;
+  totalContactsFound: number;
+  tasksWithDueDates: number;
+  highPriorityTasks: number;
+  mediumPriorityTasks: number;
+  lowPriorityTasks: number;
+  urgentTasks: number;
+  averageConfidence: number;
+  documentType: string;
+  processingTimeMs: number;
+  tasksByCategory: TasksByCategory;
+}
+
+interface TasksByCategory {
+  additionalProperty: number;
+}

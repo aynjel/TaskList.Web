@@ -104,6 +104,10 @@ export class ListComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
+  goToUpload(): void {
+    this.router.navigate(['/tasks/upload']);
+  }
+
   updateTaskStatus(taskId: number, newStatus: number): void {
     this.tasksStore.updateTaskStatus({ data: { taskId, taskStatus: newStatus as 1 | 2 | 3 | 4 } });
   }

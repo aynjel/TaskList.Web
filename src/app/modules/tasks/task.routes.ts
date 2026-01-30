@@ -21,6 +21,16 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/details/details.component').then((m) => m.DetailsComponent),
       },
+      {
+        path: 'upload',
+        loadComponent: () =>
+          import('./components/upload/upload.component').then((m) => m.UploadComponent),
+      },
+      {
+        path: 'review',
+        loadComponent: () =>
+          import('./components/review/review.component').then((m) => m.ReviewComponent),
+      },
     ],
   },
 ];

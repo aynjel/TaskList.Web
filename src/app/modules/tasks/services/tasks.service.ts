@@ -9,6 +9,7 @@ import {
   ExtractedTaskResponse,
   TaskFilterParams,
   TaskStatusKey,
+  UploadedDocumentTaskResponse,
 } from '../models/common.model';
 import { TaskItem } from './../../../shared/models/task.model';
 
@@ -70,11 +71,19 @@ export class TasksService {
     return this.httpClient.patch<TaskItem>(`${this.apiUrl}/${taskId}/status`, taskStatus);
   }
 
-  createTaskFromExtractions(
-    extractions: ExtractedTaskRequest[],
-  ): Observable<ExtractedTaskResponse> {
+  createTaskFromExtractions(tasks: ExtractedTaskRequest[]): Observable<ExtractedTaskResponse> {
     return this.httpClient.post<ExtractedTaskResponse>(`${this.apiUrl}/create-from-extraction`, {
-      extractions,
+      tasks,
     });
+  }
+
+  uploadDocumentForExtraction(file: File): Observable<UploadedDocumentTaskResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const aiUrl = environment.apiUrl + ENDPOINTS.AI;
+    return this.httpClient.post<UploadedDocumentTaskResponse>(
+      `${aiUrl}/extract-from-document`,
+      formData,
+    );
   }
 }
