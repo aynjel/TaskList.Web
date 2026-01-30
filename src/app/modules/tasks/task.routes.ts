@@ -7,6 +7,11 @@ export const routes: Routes = [
     component: TasksComponent,
     children: [
       {
+        path: '',
+        redirectTo: 'list',
+        pathMatch: 'full',
+      },
+      {
         path: 'list',
         loadComponent: () =>
           import('./components/list/list.component').then((m) => m.ListComponent),

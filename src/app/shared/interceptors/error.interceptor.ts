@@ -22,7 +22,9 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
                   modelErrors.push(errorObj[key]);
                 }
               }
-              throw modelErrors.flat();
+              modelErrors.forEach((element) => {
+                toastrService.error(element, 'Error');
+              });
             } else {
               toastrService.error(error.error.message || 'Bad Request', 'Error');
               console.error('Bad Request:', error);

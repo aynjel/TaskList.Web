@@ -1,20 +1,13 @@
 import { HttpEvent, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { of, tap } from 'rxjs';
 
+const API_URL_TO_INCLUDE_IN_CACHE = {
+  tasks: '/Tasks',
+};
+
 const cache = new Map<string, HttpEvent<any>>();
-const cacheInvalidationPatterns: Record<string, string[]> = {};
-
-// Endpoints that should never be cached
-const CACHE_EXCLUSIONS = [
-  '/auth/login',
-  '/auth/register',
-  '/auth/logout',
-  '/auth/refresh',
-  '/auth/current-user',
-];
-
-const shouldExcludeFromCache = (url: string): boolean => {
-  return CACHE_EXCLUSIONS.some((exclusion) => url.includes(exclusion));
+const cacheInvalidationPatterns: Record<string, string[]> = {
+  tasks: [API_URL_TO_INCLUDE_IN_CACHE.tasks],
 };
 
 const invalidateCache = (patterns: string[]): void => {
@@ -30,8 +23,8 @@ const invalidateCache = (patterns: string[]): void => {
 };
 
 const getCacheInvalidationPatterns = (url: string): string[] => {
-  if (url.includes('/example-endpoint')) {
-    return cacheInvalidationPatterns['example-key'] || [];
+  if (url.includes(API_URL_TO_INCLUDE_IN_CACHE.tasks)) {
+    return cacheInvalidationPatterns['tasks'];
   }
   return [];
 };
@@ -43,11 +36,6 @@ export const clearCache = (): void => {
 };
 
 export const cacheInterceptor: HttpInterceptorFn = (req, next) => {
-  // Skip caching for excluded endpoints
-  if (shouldExcludeFromCache(req.url)) {
-    return next(req);
-  }
-
   if (req.method === 'GET') {
     const cachedResponse = cache.get(req.urlWithParams);
     if (cachedResponse) {

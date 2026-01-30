@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   PriorityColors,
@@ -9,13 +9,14 @@ import {
 } from '../../shared/const/tasks.const';
 import { ByPriority, ByStatus } from '../../shared/models/task.model';
 import { GlobalStore } from '../../shared/store/global.store';
+import { TaskFormComponent } from '../tasks/components/task-form/task-form.component';
 import { HeaderComponent } from './components/header/header.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { DashboardStore } from './store/dashboard.store';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [HeaderComponent, SidebarComponent, DatePipe, RouterLink],
+  imports: [HeaderComponent, SidebarComponent, DatePipe, RouterLink, TaskFormComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -36,7 +37,23 @@ export class DashboardComponent implements OnInit {
   readonly ByStatus = {} as ByStatus;
   readonly ByPriority = {} as ByPriority;
 
+  readonly showCreateTaskModal = signal(false);
+  readonly isSubmitting = signal(false);
+
   ngOnInit(): void {
+    this.dashboardStore.loadDashboardStats();
+  }
+
+  openCreateTaskModal(): void {
+    this.showCreateTaskModal.set(true);
+  }
+
+  closeCreateTaskModal(): void {
+    this.showCreateTaskModal.set(false);
+  }
+
+  onTaskCreated(): void {
+    this.closeCreateTaskModal();
     this.dashboardStore.loadDashboardStats();
   }
 

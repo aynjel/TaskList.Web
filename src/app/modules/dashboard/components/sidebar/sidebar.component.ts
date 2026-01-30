@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, output, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
@@ -9,8 +9,13 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 })
 export class SidebarComponent {
   readonly isCollapsed = signal(false);
+  readonly createTaskClick = output<void>();
 
   toggleSidebar(): void {
     this.isCollapsed.update((value) => !value);
+  }
+
+  onCreateTaskClick(): void {
+    this.createTaskClick.emit();
   }
 }

@@ -1,6 +1,6 @@
 <div class="flex h-screen bg-gray-50 overflow-hidden">
   <!-- Sidebar -->
-  <app-sidebar />
+  <app-sidebar (createTaskClick)="openCreateTaskModal()" />
 
   <!-- Main Content -->
   <div class="flex-1 flex flex-col overflow-hidden">
@@ -321,3 +321,11 @@
     </main>
   </div>
 </div>
+
+<!-- Task Creation Modal -->
+<app-task-form
+  [isOpen]="showCreateTaskModal()"
+  (closed)="closeCreateTaskModal()"
+  (cancelled)="closeCreateTaskModal()"
+  (formSubmitted)="closeCreateTaskModal()"
+/>

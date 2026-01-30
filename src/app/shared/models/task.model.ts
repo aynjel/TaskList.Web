@@ -2,13 +2,13 @@ export interface TaskItem {
   id: number;
   title: string;
   description: string;
-  dueDate: string;
+  dueDate?: string | null;
   priority: number;
   category: number;
   status: number;
   userId: string;
   createdAt: string;
-  lastModifiedAt: any;
+  lastModifiedAt?: string | null;
 }
 
 export interface ByStatus {
