@@ -16,7 +16,7 @@ export class UploadComponent {
   readonly selectedFile = signal<File | null>(null);
   readonly dragOver = signal(false);
 
-  readonly acceptedFileTypes = '.pdf,.doc,.docx,.txt';
+  readonly acceptedFileTypes = '.pdf,.doc,.docx,.txt,.msg';
   readonly maxFileSize = 10 * 1024 * 1024; // 10MB
 
   onFileSelected(event: Event): void {
@@ -59,10 +59,12 @@ export class UploadComponent {
     }
 
     // Check file type
-    const allowedExtensions = ['pdf', 'doc', 'docx', 'txt'];
+    const allowedExtensions = ['pdf', 'doc', 'docx', 'txt', 'msg'];
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-      this.uploadError.set('Only PDF, Word (.doc, .docx), and Text (.txt) files are allowed');
+      this.uploadError.set(
+        'Only PDF, Word (.doc, .docx), Text (.txt), and Outlook (.msg) files are allowed',
+      );
       return;
     }
 

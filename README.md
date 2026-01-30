@@ -461,9 +461,3 @@ The project follows Angular style guide and TypeScript best practices.
 
 - [Angular DevTools](https://angular.dev/tools/devtools) - Browser extension
 - [VS Code Angular Extension](https://marketplace.visualstudio.com/items?itemName=Angular.ng-template) - IDE support
-
----
-
-**Version:** 0.0.0  
-**Generated with:** Angular CLI 21.0.4  
-**Package Manager:** npm 11.7.0
