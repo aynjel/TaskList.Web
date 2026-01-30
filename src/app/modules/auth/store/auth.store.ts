@@ -74,6 +74,7 @@ export const AuthStore = signalStore(
               fetchCurrentUser();
               // Start background refresh after successful login
               startBackgroundRefresh();
+              store.toastrService.success(`Welcome back, ${response.name}!`, 'Success');
             },
             error: (error: HttpErrorResponse) => {
               console.error('Login error:', error);
@@ -92,6 +93,7 @@ export const AuthStore = signalStore(
               fetchCurrentUser();
               // Start background refresh after successful registration
               startBackgroundRefresh();
+              store.toastrService.success('Registered successfully.', 'Success');
             },
             error: (error: HttpErrorResponse) => {
               console.error('Registration error:', error);
@@ -109,7 +111,7 @@ export const AuthStore = signalStore(
             stopBackgroundRefresh();
             setSessionFlag(false);
             clearCache(); // Clear all cached API responses
-            store.router.navigateByUrl('/auth/login').then(() => {
+            store.router.navigate(['/auth/login']).then(() => {
               store.toastrService.success('Logged out successfully.', 'Success');
             });
           },
