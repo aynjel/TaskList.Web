@@ -38,7 +38,6 @@ export class TaskFormComponent {
     description: [''],
     priority: [2, [Validators.required]],
     category: [1, [Validators.required]],
-    status: [1, [Validators.required]],
     dueDate: [''],
   });
 
@@ -72,7 +71,6 @@ export class TaskFormComponent {
       description: '',
       priority: 2,
       category: 1,
-      status: 1,
       dueDate: '',
     });
     this.taskForm.markAsPristine();
@@ -83,9 +81,8 @@ export class TaskFormComponent {
     this.taskForm.patchValue({
       title: task.title,
       description: task.description || '',
-      priority: task.priority,
-      category: task.category,
-      status: task.status,
+      priority: Number(task.priority),
+      category: Number(task.category),
       dueDate: task.dueDate ? this.formatDateForInput(task.dueDate) : '',
     });
   }
@@ -95,13 +92,14 @@ export class TaskFormComponent {
   }
 
   onSubmit(): void {
+    console.log('Submitting form', this.taskForm.value);
     if (this.taskForm.valid) {
       const formValue = this.taskForm.value;
       const payload: CreateTaskRequests = {
         title: formValue.title!,
         description: formValue.description || null,
-        priority: formValue.priority!,
-        category: formValue.category!,
+        priority: Number(formValue.priority!),
+        category: Number(formValue.category!),
         dueDate: formValue.dueDate || null,
       };
 

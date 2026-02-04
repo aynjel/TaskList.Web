@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import {
   PriorityColors,
   StatusColors,
@@ -35,6 +42,30 @@ export class DashboardComponent implements OnInit {
 
   readonly taskSummary = this.dashboardStore.taskSummary;
   readonly isLoading = this.globalStore.isLoading;
+
+  // Provide default values when taskSummary is empty or failed
+  readonly taskSummaryWithDefaults = computed(() => {
+    const summary = this.taskSummary();
+    if (summary) {
+      return summary;
+    }
+    // Return default structure when data is unavailable
+    return {
+      summary: 'Welcome to your dashboard',
+      metrics: {
+        totalTasks: 0,
+        dueToday: 0,
+        dueThisWeek: 0,
+        overdue: 0,
+        byStatus: { Todo: 0, InProgress: 0, Completed: 0 },
+        byPriority: { Low: 0, Medium: 0, High: 0 },
+        byCategory: { Work: 0, Shopping: 0 },
+      },
+      tasksToday: [],
+      upcomingTasks: [],
+      generatedAt: new Date().toISOString(),
+    };
+  });
 
   readonly TASK_STATUS_LIST = TaskStatusList;
   readonly TASK_PRIORITY_LIST = TaskPriorityList;

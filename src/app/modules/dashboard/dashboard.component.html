@@ -12,58 +12,85 @@
       @if (isLoading()) {
         <!-- Loading State -->
         <app-dashboard-skeleton />
-      } @else if (taskSummary()) {
+      } @else {
         <!-- Welcome Section -->
         <div class="mb-6">
           <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p class="text-gray-600 mt-1">{{ taskSummary()?.summary }}</p>
+          <p class="text-gray-600 mt-1">{{ taskSummaryWithDefaults().summary }}</p>
         </div>
 
         <!-- Stats Cards -->
         <div class="mb-8">
-          <app-stats-cards [metrics]="taskSummary()!.metrics" />
+          <app-stats-cards [metrics]="taskSummaryWithDefaults().metrics" />
         </div>
 
         <!-- Task Breakdown -->
         <div class="mb-8">
           <app-task-breakdown
-            [byStatus]="taskSummary()!.metrics.byStatus"
-            [byPriority]="taskSummary()!.metrics.byPriority"
+            [byStatus]="taskSummaryWithDefaults().metrics.byStatus"
+            [byPriority]="taskSummaryWithDefaults().metrics.byPriority"
           />
         </div>
 
         <!-- Tasks Today -->
-        @if (taskSummary()?.tasksToday && taskSummary()?.tasksToday!.length > 0) {
+        @if (taskSummaryWithDefaults().tasksToday.length > 0) {
           <div class="mb-8">
-            <app-task-list-section title="Tasks Due Today" [tasks]="taskSummary()!.tasksToday" />
+            <app-task-list-section
+              title="Tasks Due Today"
+              [tasks]="taskSummaryWithDefaults().tasksToday"
+            />
           </div>
         }
 
         <!-- Upcoming Tasks -->
-        @if (taskSummary()?.upcomingTasks && taskSummary()?.upcomingTasks!.length > 0) {
-          <app-task-list-section title="Upcoming Tasks" [tasks]="taskSummary()!.upcomingTasks" />
+        @if (taskSummaryWithDefaults().upcomingTasks.length > 0) {
+          <app-task-list-section
+            title="Upcoming Tasks"
+            [tasks]="taskSummaryWithDefaults().upcomingTasks"
+          />
         }
-      } @else {
-        <!-- Empty State -->
-        <div class="flex items-center justify-center h-64">
-          <div class="text-center">
-            <svg
-              class="w-16 h-16 text-gray-400 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">No data available</h3>
-            <p class="text-gray-600">Unable to load dashboard statistics.</p>
+
+        <!-- Empty State for Tasks -->
+        @if (
+          taskSummaryWithDefaults().tasksToday.length === 0 &&
+          taskSummaryWithDefaults().upcomingTasks.length === 0 &&
+          taskSummaryWithDefaults().metrics.totalTasks === 0
+        ) {
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
+            <div class="text-center">
+              <svg
+                class="w-16 h-16 text-gray-300 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              </svg>
+              <h3 class="text-lg font-medium text-gray-900 mb-2">No tasks yet</h3>
+              <p class="text-gray-600 mb-4">Get started by creating your first task</p>
+              <button
+                type="button"
+                (click)="openCreateTaskModal()"
+                class="cursor-pointer inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition duration-200"
+              >
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Create Task
+              </button>
+            </div>
           </div>
-        </div>
+        }
       }
     </main>
   </div>
