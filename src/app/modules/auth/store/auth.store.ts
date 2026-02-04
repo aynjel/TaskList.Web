@@ -11,7 +11,7 @@ import {
   withState,
 } from '@ngrx/signals';
 import { ToastrService } from 'ngx-toastr';
-import { catchError, first, of, tap } from 'rxjs';
+import { catchError, firstValueFrom, of, tap } from 'rxjs';
 import { clearCache } from '../../../shared/interceptors/cache.interceptor';
 import { ApiResponse } from '../../../shared/models/api.model';
 import { GlobalStore } from '../../../shared/store/global.store';
@@ -128,12 +128,13 @@ export const AuthStore = signalStore(
           next: (response) => {
             setCurrentUser(response);
           },
-          error: (_: HttpErrorResponse) => {
-            // force logout on failure to get current user
-            setCurrentUser(undefined);
-            setToken(undefined);
-            stopBackgroundRefresh();
-            setSessionFlag(false);
+          error: (error: HttpErrorResponse) => {
+            if (error.status === 401 || error.status === 403) {
+              setCurrentUser(undefined);
+              setToken(undefined);
+              stopBackgroundRefresh();
+              setSessionFlag(false);
+            }
           },
         }),
       ),
@@ -161,34 +162,49 @@ export const AuthStore = signalStore(
       ),
     );
 
-    const silentRefresh = () => {
+    const silentRefresh = async (): Promise<void> => {
       const hasSession = localStorage.getItem(SESSION_FLAG);
       if (!hasSession) {
-        return; // No session flag, skip refresh attempt
+        return;
       }
 
-      // Directly subscribe without using withApiState to avoid logging errors
-      store.authService
-        .refreshToken()
-        .pipe(
-          first(),
-          tap({
-            next: (response) => {
-              setToken(response.token);
-              // Ensure session flag is set
-              setSessionFlag(true);
-              // Fetch current user after successful token refresh
-              fetchCurrentUser();
-              // Start background refresh after successful token refresh
-              startBackgroundRefresh();
-            },
-          }),
-          catchError(() => {
-            setSessionFlag(false);
-            return of(null);
-          }),
-        )
-        .subscribe();
+      try {
+        const response = await firstValueFrom(
+          store.authService.refreshToken().pipe(
+            catchError((error: HttpErrorResponse) => {
+              if (error.status === 401 || error.status === 403) {
+                setSessionFlag(false);
+              }
+              return of(null);
+            }),
+          ),
+        );
+
+        if (response) {
+          setToken(response.token);
+          setSessionFlag(true);
+
+          await firstValueFrom(
+            store.authService.getCurrentUser().pipe(
+              tap((user) => setCurrentUser(user)),
+              catchError((error: HttpErrorResponse) => {
+                if (error.status === 401 || error.status === 403) {
+                  setCurrentUser(undefined);
+                  setToken(undefined);
+                  setSessionFlag(false);
+                }
+                return of(null);
+              }),
+            ),
+          );
+
+          if (store.currentUser()) {
+            startBackgroundRefresh();
+          }
+        }
+      } catch (error) {
+        console.error('Silent refresh failed:', error);
+      }
     };
 
     const startBackgroundRefresh = () => {

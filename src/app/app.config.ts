@@ -20,7 +20,7 @@ const INITIALIZE_APP = async (): Promise<void> => {
   const document = inject(DOCUMENT);
   const renderer = inject(RendererFactory2).createRenderer(null, null);
 
-  authStore.silentRefresh();
+  await authStore.silentRefresh();
 
   await new Promise<void>((resolve) => {
     setTimeout(() => {
