@@ -8,7 +8,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarComponent {
-  readonly isCollapsed = signal(false);
+  readonly isCollapsed = signal(true);
   readonly createTaskClick = output<void>();
 
   toggleSidebar(): void {

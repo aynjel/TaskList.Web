@@ -1,0 +1,45 @@
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- Tasks by Status -->
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Tasks by Status</h2>
+    <div class="space-y-3">
+      @for (status of TASK_STATUS_LIST; track status) {
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span
+              [class]="STATUS_COLORS[status.value] + ' px-3 py-1 rounded-full text-sm font-medium'"
+            >
+              {{ status.label }}
+            </span>
+          </div>
+          <span class="text-lg font-semibold text-gray-900">
+            {{ getStatusCount(status.label) }}
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Tasks by Priority -->
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Tasks by Priority</h2>
+    <div class="space-y-3">
+      @for (priority of TASK_PRIORITY_LIST; track priority) {
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span
+              [class]="
+                PRIORITY_COLORS[priority.value] + ' px-3 py-1 rounded-full text-sm font-medium'
+              "
+            >
+              {{ priority.label }}
+            </span>
+          </div>
+          <span class="text-lg font-semibold text-gray-900">
+            {{ getPriorityCount(priority.label) }}
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+</div>

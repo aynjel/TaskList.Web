@@ -24,8 +24,8 @@ export const CategoryTypeList = [
 ];
 
 export const TaskStatusList = [
-  { label: 'To Do', value: TaskStatuses.TODO },
-  { label: 'In Progress', value: TaskStatuses.IN_PROGRESS },
+  { label: 'Todo', value: TaskStatuses.TODO },
+  { label: 'InProgress', value: TaskStatuses.IN_PROGRESS },
   { label: 'Completed', value: TaskStatuses.COMPLETED },
   { label: 'Cancelled', value: TaskStatuses.CANCELLED },
 ];
